@@ -23,10 +23,20 @@ namespace VNPos.Infrastructure.Services
             await _hubContext.Clients.All.SendAsync("ReceiveNewOrder", new
             {
                 OrderId = order.OrderId,
+                OrderCode = order.OrderCode,
                 OrderTime = order.OrderTime,
                 TotalAmount = order.TotalAmount,
                 CreatedBy = order.CreatedBy,
                 Status = order.Status
+            });
+        }
+
+        public async Task SendProductStockUpdateNotification(int productId, int newQuantity)
+        {
+            await _hubContext.Clients.All.SendAsync("ReceiveProductStockUpdate", new
+            {
+                ProductId = productId,
+                QuantityInStock = newQuantity
             });
         }
     }

@@ -15,9 +15,11 @@ namespace VNPos.Infrastructure.Repositories
     public class ProductRepository : IProductRepository
     {
         private readonly AppDbContext _context;
-        public ProductRepository(AppDbContext context)
+        private readonly INotificationService _notificationService;
+        public ProductRepository(AppDbContext context, INotificationService notificationService)
         {
             _context = context;
+            _notificationService = notificationService;
         }
 
         public async Task<Product?> GetProductByIdAsync(int productId)
@@ -57,8 +59,13 @@ namespace VNPos.Infrastructure.Repositories
                 return false;
             }
             product.QuantityInStock += quantity;
+            var newQuantity = product.QuantityInStock;
 
             await _context.SaveChangesAsync();
+
+            // Notify all connected clients about stock change via SignalR
+            await _notificationService.SendProductStockUpdateNotification(productId, newQuantity);
+
             return true;
         }
     }

@@ -14,5 +14,6 @@ namespace VNPos.Application.Interfaces
         Task<Order> CreateOrderAsync(Order order);
         Task<OrderResponseDto?> GetOrderByIdAsync(Guid orderId);
         Task<PageResult<OrderResponseDto>> GetOrdersAsync(OrderParams orderParams);
+        Task<int> GetNextOrderNumberAsync();
     }
 }

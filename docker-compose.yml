@@ -1,0 +1,52 @@
+version: '3.9'
+
+services:
+  # SQL Server 2022 - Database service
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: vnpos-sql
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=Fuco@123  # SA password, must be strong
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqldata:/var/opt/mssql  # Persist database data
+    healthcheck:
+      # Check if SQL Server is ready before starting API
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "Fuco@123" -C -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 90s
+
+  # .NET Core Web API - Backend service
+  api:
+    build:
+      context: .
+      dockerfile: Backend/VNPos.API/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      # Connection string points to sqlserver container
+      - ConnectionStrings__DefaultConnection=Server=sqlserver,1433;Database=VNPosDb;User ID=sa;Password=Fuco@123;TrustServerCertificate=True;MultipleActiveResultSets=true;
+    ports:
+      - "8080:8080"
+    depends_on:
+      sqlserver:
+        condition: service_healthy  # Wait for SQL Server to be ready
+
+  # React + Vite + Nginx - Frontend service
+  frontend:
+    build:
+      context: ./Frontend
+      dockerfile: Dockerfile
+      args:
+        # API URL for frontend to connect to backend
+        - VITE_API_BASE_URL=http://localhost:8080/api
+    ports:
+      - "3000:80"
+    depends_on:
+      - api
+
+volumes:
+  sqldata:  # Named volume for SQL Server data persistence

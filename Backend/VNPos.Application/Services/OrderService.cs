@@ -53,12 +53,18 @@ namespace VNPos.Application.Services
 
         public async Task<Order> CreateOrderAsync(CreateOrderDto request, Guid userId)
         {
+            // Use transaction to ensure data consistency between order and stock updates
             await _unitOfWork.BeginTransactionAsync();
             try
             {
+                // Generate sequential order code: HD001, HD002, HD003, etc.
+                var nextOrderNumber = await _orderRepository.GetNextOrderNumberAsync();
+                var orderCode = $"HD{nextOrderNumber:D3}";
+
                 var order = new Order
                 {
                     OrderId = Guid.NewGuid(),
+                    OrderCode = orderCode,
                     OrderTime = DateTime.UtcNow,
                     CreatedBy = userId,
                     TotalAmount = request.TotalAmount,
@@ -90,6 +96,7 @@ namespace VNPos.Application.Services
 
                 await _unitOfWork.CommitTransactionAsync();
 
+                // Notify all connected clients about new order via SignalR
                 await _notificationService.SendNewOrderNotification(newOrder);
 
                 return newOrder;

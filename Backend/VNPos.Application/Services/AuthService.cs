@@ -31,13 +31,13 @@ namespace VNPos.Application.Services
             var user = await _userRepository.GetByUsernameAsync(request.Username);
             if (user == null)
             {
-                return null; // User not found
+                return null;
             }
 
             bool isPasswordValid = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
             if (!isPasswordValid)
             {
-                return null; // Invalid password
+                return null;
             }
 
             var token = GenerateToken(user);
@@ -70,7 +70,7 @@ namespace VNPos.Application.Services
                 issuer: issuer,
                 audience: audience,
                 claims: claims,
-                expires: DateTime.Now.AddHours(3),
+                expires: DateTime.Now.AddHours(3), // Token expires in 3 hours
                 signingCredentials: creds
             );
 
